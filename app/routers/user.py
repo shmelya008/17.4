@@ -28,12 +28,16 @@ async def user_by_id(db: Annotated[Session, Depends(get_db)], user_id: int):
 
 
 @router.post('/create')
-async def create_user(db: Annotated[Session, Depends(get_db)], cre_user: CreateUser):
+async def create_user(db: Annotated[Session, Depends(get_db)], username: str, cre_user: CreateUser):
+    username = db.scalar(select(User).where(User.username == username))
+    if username is not None:
+        raise HTTPException(status_code=status.HTTP_306_RESERVED,
+                            detail='This user already exists')
     db.execute(insert(User).values(username=cre_user.username,
                                    firstname=cre_user.firstname,
                                    lastname=cre_user.lastname,
-                                   age=cre_user.age))
-                                   #slug=slugify(cre_user.username)))
+                                   age=cre_user.age))  # ,
+                                   # slug=slugify(cre_user.username)))
     db.commit()
     return {
         'status_code': status.HTTP_201_CREATED,
@@ -69,3 +73,13 @@ async def delete_user(db: Annotated[Session, Depends(get_db)], user_id: int):
         'status_code': status.HTTP_200_OK,
         'transaction': 'User delete is successful'
     }
+
+
+# @router.delete('/delete_all')
+# async def delete_all_users(db: Annotated[Session, Depends(get_db)]):
+#     db.execute(delete(User))
+#     db.commit()
+#     return {
+#         'status_code': status.HTTP_200_OK,
+#         'transaction': 'All users have been successfully deleted.'
+#     }
